@@ -4,6 +4,7 @@ import * as TougleGroup from '@radix-ui/react-toggle-group'
 import { Check, GameController } from 'phosphor-react';
 import { Input } from "./Form/Input";
 import { useEffect, useState, FormEvent } from 'react';
+import axios from 'axios';
 
 interface Game {
   id: string;
@@ -16,21 +17,37 @@ export function CreateAdModal() {
   const [useVoiceChannel, setUseVoiceChannel] = useState(false);
 
   useEffect(() => {
-    fetch('http://localhost:3333/games')
-    .then(response => response.json())
-    .then(data => {
-      setGames(data)
+    axios('http://localhost:3333/games').then(response => {
+      setGames(response.data)
     })
   },[])
 
-  function handleCreateAd(event: FormEvent){
+  async function handleCreateAd(event: FormEvent){
     event.preventDefault();
 
     const formData = new FormData(event.target as HTMLFormElement)
     const data = Object.fromEntries(formData)
     console.log(data)
-    console.log(weekDays)
-    console.log(useVoiceChannel)
+    if(!data.name){
+      return;
+    }
+    
+    try{
+      axios.post(`http://localhost:3333/games/${data.game}/ads`,{
+        name: data.name,
+        yearsPlaying: Number(data.yearsPlaying),
+        Discord: data.Discord,
+        weekDays: weekDays.map(Number),
+        hoursStart: data.hoursStart,
+        hourEnd: data.hourEnd,
+        useVoiceChannel: useVoiceChannel,
+      })
+
+      alert('Anúncio criado com sucesso!')
+    }catch (err){
+      console.log(err)
+      alert('Erro ao criar o anúncio!')
+    }
   }
 
   return (
@@ -45,9 +62,9 @@ export function CreateAdModal() {
             <label htmlFor="game" className='font-semibold '>Qual o game?</label>
             <select 
               className='bg-zinc-900 py-3 px-4 rounded text-sm appearance-none placeholder:text-zinc-500 ' 
-              name="" 
               id="game"
-              defaultValue={""} 
+              name="game"
+              defaultValue=""
               >
               <option disabled  value="">Selecione o game que deseja jogar</option>
 
@@ -114,9 +131,9 @@ export function CreateAdModal() {
 
             </div>
             <div className='flex flex-col gap-2 flex-1'>
-              <label htmlFor="hourStart">Qual horário do dia?</label>
+              <label htmlFor="hoursStart">Qual horário do dia?</label>
               <div className='grid grid-cols-2 gap-2'>
-                <Input type="time" name='hourStart' id='hourStart' placeholder='De' />
+                <Input type="time" name='hoursStart' id='hoursStart' placeholder='De' />
                 <Input type="time" name='hourEnd' id='hourEnd' placeholder='Até' />
               </div>
             </div>
